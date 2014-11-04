@@ -84,6 +84,18 @@ VALUE rb_socket_bind(VALUE self, VALUE addr) {
     return (endpoint_id == -1) ? Qnil : INT2NUM(endpoint_id);
 }
 
+VALUE rb_socket_connect(VALUE self, VALUE addr) {
+    Socket *S;
+    Data_Get_Struct(self, Socket, S);
+
+    if (!S || S->fd == -1)
+        return Qnil;
+
+    const char *addr_c = StringValueCStr(addr);
+    const int endpoint_id = nn_bind(S->fd, addr_c);
+    return (endpoint_id == -1) ? Qnil : INT2NUM(endpoint_id);
+}
+
 VALUE rb_socket_poll(VALUE self, VALUE mask, VALUE timeout) {
     Socket *S;
     Data_Get_Struct(self, Socket, S);
@@ -212,6 +224,7 @@ void Init_rnmsg() {
     rb_define_alloc_func(cSocket, rb_socket_alloc);
     rb_define_method(cSocket, "initialize", rb_socket_initialize, 2);
     rb_define_method(cSocket, "bind", rb_socket_bind, 1);
+    rb_define_method(cSocket, "connect", rb_socket_bind, 1);
     rb_define_method(cSocket, "poll", rb_socket_poll, 2);
     rb_define_method(cSocket, "send_msg", rb_socket_send_msg, 1);
     rb_define_method(cSocket, "recv_msg", rb_socket_recv_msg, 0);
