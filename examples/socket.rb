@@ -27,9 +27,9 @@ loop do
   ev = socket.poll Nanomsg::NN_POLLIN, 100
   raise "Error: nn_poll" if ev.nil?
   if ev
-    data = socket.recv
+    data = socket.recv_msg
     sem_puts "=> HI [#{data}]"
-    socket.send data
+    socket.send_msg data
     sem_puts "<= KTHXBAI [#{data}]"
     end
   end

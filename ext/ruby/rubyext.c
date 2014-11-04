@@ -107,21 +107,7 @@ VALUE rb_socket_poll(VALUE self, VALUE mask, VALUE timeout) {
     return (pfd.revents & NUM2INT(mask)) ? Qtrue : Qfalse;
 }
 
-#if 0
-struct recieve_buffer {
-    Socket *socket;
-    void *buffer;
-    int nbytes;
-};
-
-static void *rb_socket_recv_blocking(void *data) {
-    struct recieve_buffer *buf = data;
-    buf->nbytes = nn_recv(buf->socket->fd, &buf->buffer, NN_MSG, NN_DONTWAIT);
-    return (void *)(VALUE)Qnil;
-}
-#endif
-
-VALUE rb_socket_send(VALUE self, VALUE obj, VALUE mask) {
+VALUE rb_socket_send_msg(VALUE self, VALUE obj, VALUE mask) {
     Socket *S;
     Data_Get_Struct(self, Socket, S);
 
@@ -139,7 +125,7 @@ VALUE rb_socket_send(VALUE self, VALUE obj, VALUE mask) {
     return (nbytes == msg_bytes) ? Qtrue : Qfalse;
 }
 
-VALUE rb_socket_recv(VALUE self) {
+VALUE rb_socket_recv_msg(VALUE self) {
     Socket *S;
     Data_Get_Struct(self, Socket, S);
 
@@ -153,15 +139,6 @@ VALUE rb_socket_recv(VALUE self) {
 
     VALUE rs = rb_tainted_str_new(buffer, nbytes);
     nn_freemsg(buffer);
-
-#if 0
-    struct recieve_buffer buf;
-    buf.socket = S;
-    buf.buffer = NULL;
-    rb_thread_call_without_gvl(rb_socket_recv_blocking, &buf, RUBY_UBF_PROCESS, 0);
-    VALUE rs = rb_tainted_str_new(buf.buffer, buf.nbytes);
-    nn_freemsg(buf.buffer);
-#endif
 
     return rs;
 }
@@ -231,8 +208,8 @@ void Init_rnmsg() {
     rb_define_method(cSocket, "initialize", rb_socket_initialize, 2);
     rb_define_method(cSocket, "bind", rb_socket_bind, 1);
     rb_define_method(cSocket, "poll", rb_socket_poll, 2);
-    rb_define_method(cSocket, "send", rb_socket_send, 1);
-    rb_define_method(cSocket, "recv", rb_socket_recv, 0);
+    rb_define_method(cSocket, "send_msg", rb_socket_send_msg, 1);
+    rb_define_method(cSocket, "recv_msg", rb_socket_recv_msg, 0);
     rb_define_method(cSocket, "close", rb_socket_close, 0);
     rb_define_method(cSocket, "shutdown", rb_socket_shutdown, 1);
 
