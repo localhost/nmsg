@@ -92,7 +92,7 @@ VALUE rb_socket_connect(VALUE self, VALUE addr) {
         return Qnil;
 
     const char *addr_c = StringValueCStr(addr);
-    const int endpoint_id = nn_bind(S->fd, addr_c);
+    const int endpoint_id = nn_connect(S->fd, addr_c);
     return (endpoint_id == -1) ? Qnil : INT2NUM(endpoint_id);
 }
 
