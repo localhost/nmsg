@@ -107,7 +107,7 @@ VALUE rb_socket_poll(VALUE self, VALUE mask, VALUE timeout) {
     return (pfd.revents & NUM2INT(mask)) ? Qtrue : Qfalse;
 }
 
-VALUE rb_socket_send_msg(VALUE self, VALUE obj, VALUE mask) {
+VALUE rb_socket_send_msg(VALUE self, VALUE obj) {
     Socket *S;
     Data_Get_Struct(self, Socket, S);
 
@@ -116,11 +116,16 @@ VALUE rb_socket_send_msg(VALUE self, VALUE obj, VALUE mask) {
 
     const int msg_bytes = RSTRING_LEN(obj);
     const char *data = RSTRING_PTR(obj);
-
     void *msg = nn_allocmsg(msg_bytes, 0);
-    const int nbytes = nn_send(S->fd, &msg, NN_MSG, NN_DONTWAIT);
-    if (nbytes < 0)
+    if (!msg)
         return Qnil;
+    memcpy(msg, data, msg_bytes);
+
+    const int nbytes = nn_send(S->fd, &msg, NN_MSG, NN_DONTWAIT);
+    if (nbytes < 0) {
+        nn_freemsg(msg);
+        return Qnil;
+    }
 
     return (nbytes == msg_bytes) ? Qtrue : Qfalse;
 }

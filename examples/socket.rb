@@ -29,7 +29,7 @@ loop do
   if ev
     data = socket.recv_msg
     sem_puts "=> HI [#{data}]"
-    socket.send_msg data
+    socket.send_msg data.reverse
     sem_puts "<= KTHXBAI [#{data}]"
   end
 end
