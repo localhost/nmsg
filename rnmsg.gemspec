@@ -12,7 +12,7 @@ Gem::Specification.new do |s|
 
   s.files         = [
     'README.md', 'LICENSE', 'Makefile', 'Gemfile', 'rnmsg.gemspec',
-    'examples/socket.rb', 'ext/ruby/extconf.rb', 'ext/ruby/rubyext.c'
+    'examples/req.rb', 'examples/rep.rb', 'ext/ruby/extconf.rb', 'ext/ruby/rubyext.c'
   ]
   s.require_paths = ['lib']
 

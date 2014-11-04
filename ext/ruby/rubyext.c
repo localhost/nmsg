@@ -24,10 +24,13 @@
 //
 
 #include <ruby.h>
-#include <ruby/thread.h>
 
-#include <stdio.h>
+#ifdef HAVE_RB_THREAD_CALL_WITHOUT_GVL
+# include <ruby/thread.h>
+#endif
+
 #include <string.h>
+#include <stdint.h>
 
 // core
 #include <nanomsg/nn.h>
@@ -44,6 +47,10 @@
 #include <nanomsg/inproc.h>
 #include <nanomsg/ipc.h>
 #include <nanomsg/tcp.h>
+
+#define GET_SOCKET(self) \
+    Socket *S; \
+    Data_Get_Struct(self, Socket, S)
 
 static VALUE mRnmsg, cSocket;
 
@@ -63,19 +70,16 @@ VALUE rb_socket_alloc(VALUE klass) {
 }
 
 VALUE rb_socket_initialize(VALUE self, VALUE domain, VALUE protocol) {
-    Socket *S;
-    Data_Get_Struct(self, Socket, S);
+    GET_SOCKET(self);
+    if (!S)
+        return Qnil;
 
-    if (S)
-        S->fd = nn_socket(NUM2INT(domain), NUM2INT(protocol));
-
-    return Qnil;
+    S->fd = nn_socket(NUM2INT(domain), NUM2INT(protocol));
+    return self;
 }
 
 VALUE rb_socket_bind(VALUE self, VALUE addr) {
-    Socket *S;
-    Data_Get_Struct(self, Socket, S);
-
+    GET_SOCKET(self);
     if (!S || S->fd == -1)
         return Qnil;
 
@@ -85,9 +89,7 @@ VALUE rb_socket_bind(VALUE self, VALUE addr) {
 }
 
 VALUE rb_socket_connect(VALUE self, VALUE addr) {
-    Socket *S;
-    Data_Get_Struct(self, Socket, S);
-
+    GET_SOCKET(self);
     if (!S || S->fd == -1)
         return Qnil;
 
@@ -97,9 +99,7 @@ VALUE rb_socket_connect(VALUE self, VALUE addr) {
 }
 
 VALUE rb_socket_poll(VALUE self, VALUE mask, VALUE timeout) {
-    Socket *S;
-    Data_Get_Struct(self, Socket, S);
-
+    GET_SOCKET(self);
     if (!S || S->fd == -1)
         return Qnil;
 
@@ -119,10 +119,24 @@ VALUE rb_socket_poll(VALUE self, VALUE mask, VALUE timeout) {
     return (pfd.revents & NUM2INT(mask)) ? Qtrue : Qfalse;
 }
 
-VALUE rb_socket_send_msg(VALUE self, VALUE obj) {
-    Socket *S;
-    Data_Get_Struct(self, Socket, S);
+VALUE rb_socket_recv_msg(VALUE self) {
+    GET_SOCKET(self);
+    if (!S || S->fd == -1)
+        return Qnil;
 
+    void *buffer;
+    const int nbytes = nn_recv(S->fd, &buffer, NN_MSG, NN_DONTWAIT);
+    if (nbytes < 0)
+        return Qnil;
+
+    VALUE rs = rb_tainted_str_new(buffer, nbytes);
+    nn_freemsg(buffer);
+
+    return rs;
+}
+
+VALUE rb_socket_send_msg(VALUE self, VALUE obj) {
+    GET_SOCKET(self);
     if (!S || S->fd == -1)
         return Qnil;
 
@@ -142,28 +156,44 @@ VALUE rb_socket_send_msg(VALUE self, VALUE obj) {
     return (nbytes == msg_bytes) ? Qtrue : Qfalse;
 }
 
-VALUE rb_socket_recv_msg(VALUE self) {
-    Socket *S;
-    Data_Get_Struct(self, Socket, S);
+#ifdef HAVE_RB_THREAD_CALL_WITHOUT_GVL
 
+struct nogvl_msg {
+    int fd;
+    void **msg;
+};
+
+static void *nogvl_send_msg(void *p) {
+    struct nogvl_msg *wrapper = p;
+    return (void *)(intptr_t)nn_send(wrapper->fd, wrapper->msg, NN_MSG, 0);
+}
+
+VALUE rb_socket_send_msg_block(VALUE self, VALUE obj) {
+    GET_SOCKET(self);
     if (!S || S->fd == -1)
         return Qnil;
 
-    void *buffer;
-    const int nbytes = nn_recv(S->fd, &buffer, NN_MSG, NN_DONTWAIT);
-    if (nbytes < 0)
+    const int msg_bytes = RSTRING_LEN(obj);
+    const char *data = RSTRING_PTR(obj);
+    void *msg = nn_allocmsg(msg_bytes, 0);
+    if (!msg)
         return Qnil;
+    memcpy(msg, data, msg_bytes);
 
-    VALUE rs = rb_tainted_str_new(buffer, nbytes);
-    nn_freemsg(buffer);
+    struct nogvl_msg wrapper = { S->fd, &msg };
+    const int nbytes = (int)rb_thread_call_without_gvl(nogvl_send_msg, &wrapper, RUBY_UBF_IO, 0);
+    if (nbytes < 0) {
+        nn_freemsg(msg);
+        return Qnil;
+    }
 
-    return rs;
+    return (nbytes == msg_bytes) ? Qtrue : Qfalse;
 }
 
-VALUE rb_socket_close(VALUE self) {
-    Socket *S;
-    Data_Get_Struct(self, Socket, S);
+#endif // HAVE_RB_THREAD_CALL_WITHOUT_GVL
 
+VALUE rb_socket_close(VALUE self) {
+    GET_SOCKET(self);
     if (S && S->fd != -1) {
         nn_close(S->fd);
         S->fd = -1;
@@ -173,25 +203,20 @@ VALUE rb_socket_close(VALUE self) {
 }
 
 VALUE rb_socket_shutdown(VALUE self, VALUE how) {
-    Socket *S;
-    Data_Get_Struct(self, Socket, S);
-
-    if (S && S->fd != -1) {
+    GET_SOCKET(self);
+    if (S && S->fd != -1)
         nn_shutdown(S->fd, NUM2INT(how));
-    }
 
     return self;
 }
 
 VALUE rb_socket_get_fd(VALUE self) {
-    Socket *S;
-    Data_Get_Struct(self, Socket, S);
+    GET_SOCKET(self);
     return rb_int_new(S->fd);
 }
 
 VALUE rb_socket_get_sysfd(VALUE self) {
-    Socket *S;
-    Data_Get_Struct(self, Socket, S);
+    GET_SOCKET(self);
 
     int optval;
     size_t optval_len = sizeof(int);
@@ -222,12 +247,18 @@ void Init_rnmsg() {
 
     cSocket = rb_define_class_under(mRnmsg, "Socket", rb_cObject);
     rb_define_alloc_func(cSocket, rb_socket_alloc);
+
     rb_define_method(cSocket, "initialize", rb_socket_initialize, 2);
     rb_define_method(cSocket, "bind", rb_socket_bind, 1);
-    rb_define_method(cSocket, "connect", rb_socket_bind, 1);
+    rb_define_method(cSocket, "connect", rb_socket_connect, 1);
     rb_define_method(cSocket, "poll", rb_socket_poll, 2);
-    rb_define_method(cSocket, "send_msg", rb_socket_send_msg, 1);
     rb_define_method(cSocket, "recv_msg", rb_socket_recv_msg, 0);
+    rb_define_method(cSocket, "send_msg", rb_socket_send_msg, 1);
+
+#ifdef HAVE_RB_THREAD_CALL_WITHOUT_GVL
+    rb_define_method(cSocket, "send_msg_block", rb_socket_send_msg_block, 1);
+#endif
+
     rb_define_method(cSocket, "close", rb_socket_close, 0);
     rb_define_method(cSocket, "shutdown", rb_socket_shutdown, 1);
 
