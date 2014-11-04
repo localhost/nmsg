@@ -31,7 +31,6 @@ loop do
     sem_puts "=> HI [#{data}]"
     socket.send_msg data
     sem_puts "<= KTHXBAI [#{data}]"
-    end
   end
 end
 
