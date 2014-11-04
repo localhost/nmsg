@@ -1,0 +1,6 @@
+.DS_Store
+*.gem
+**/*.o
+ext/ruby/Makefile
+ext/ruby/*.log
+ext/ruby/*.bundle
