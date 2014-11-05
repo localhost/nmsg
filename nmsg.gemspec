@@ -1,12 +1,12 @@
 Gem::Specification.new do |s|
   s.name          = 'nmsg'
-  s.version       = '0.1.0.pre'
+  s.version       = '0.1.1.pre'
   s.license       = 'MIT'
   s.author        = 'Alex Brem'
   s.email         = 'alex@fluktuation.net'
   s.homepage      = 'https://github.com/localhost/nmsg'
-  s.summary       = %w{native nanomsg binding}
-  s.description   = %w{native binding for the nanomsg c library}
+  s.summary       = %Q{native nanomsg binding}
+  s.description   = %Q{native binding for the nanomsg c library}
 
   s.files         = [
     'README.md', 'LICENSE', 'Makefile', 'Gemfile', 'nmsg.gemspec',
