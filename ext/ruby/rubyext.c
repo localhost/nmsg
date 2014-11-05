@@ -59,7 +59,8 @@ typedef struct {
 } Socket;
 
 static void rb_socket_free(Socket *S) {
-    nn_shutdown(S->fd, 0);
+    if (S->fd > 0)
+        nn_shutdown(S->fd, 0);
     xfree(S);
 }
 
@@ -194,7 +195,7 @@ VALUE rb_socket_send_msg_block(VALUE self, VALUE obj) {
 
 VALUE rb_socket_close(VALUE self) {
     GET_SOCKET(self);
-    if (S && S->fd != -1) {
+    if (S && S->fd > 0) {
         nn_close(S->fd);
         S->fd = -1;
     }
@@ -204,8 +205,10 @@ VALUE rb_socket_close(VALUE self) {
 
 VALUE rb_socket_shutdown(VALUE self, VALUE how) {
     GET_SOCKET(self);
-    if (S && S->fd != -1)
+    if (S && S->fd > 0) {
         nn_shutdown(S->fd, NUM2INT(how));
+        S->fd = -1;
+    }
 
     return self;
 }
