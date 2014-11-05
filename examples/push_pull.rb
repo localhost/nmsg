@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-require_relative '../ext/ruby/rnmsg'
+require_relative '../ext/nmsg/nmsg'
 
 addr = ARGV.shift || "inproc://6581"
 
@@ -15,7 +15,7 @@ MAX_MSG = 50
 15.times do
   @mutex.synchronize do
     Thread.new do
-      push = Nanomsg::Socket.new(Nanomsg::AF_SP, Nanomsg::NN_PUSH)
+      push = Nmsg::Socket.new(Nmsg::AF_SP, Nmsg::NN_PUSH)
       eid = push.connect(addr)
       loop do
         cnt = @mutex.synchronize { @sent += 1 }
@@ -26,11 +26,11 @@ MAX_MSG = 50
   end
 end
 
-pull = Nanomsg::Socket.new(Nanomsg::AF_SP, Nanomsg::NN_PULL)
+pull = Nmsg::Socket.new(Nmsg::AF_SP, Nmsg::NN_PULL)
 pull.bind addr
 
 loop do
-  ev = pull.poll Nanomsg::NN_POLLIN, 50
+  ev = pull.poll Nmsg::NN_POLLIN, 50
   raise "Error: nn_poll" if ev.nil?
   if ev
     @received += 1

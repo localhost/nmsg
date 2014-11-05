@@ -1,8 +1,8 @@
 #!/usr/bin/env ruby
 
-require_relative '../ext/ruby/rnmsg'
+require_relative '../ext/nmsg/nmsg'
 
-socket = Nanomsg::Socket.new Nanomsg::AF_SP, Nanomsg::NN_REP
+socket = Nmsg::Socket.new Nmsg::AF_SP, Nmsg::NN_REP
 puts "fd: #{socket.get_fd}  sysfd: #{socket.get_sysfd}"
 
 addr = ARGV.shift || "tcp://127.0.0.1:4000"
@@ -17,7 +17,7 @@ trap("SIGINT") do
 end
 
 loop do
-  ev = socket.poll Nanomsg::NN_POLLIN, 1000
+  ev = socket.poll Nmsg::NN_POLLIN, 1000
   raise "Error: nn_poll" if ev.nil?
   if ev
     data = socket.recv_msg

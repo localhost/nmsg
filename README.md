@@ -1,5 +1,5 @@
-rnmsg
-=====
+nmsg
+====
 
 Native Ruby binding for the [nanomsg](http://nanomsg.org/) library.
 
@@ -10,3 +10,4 @@ Native Ruby binding for the [nanomsg](http://nanomsg.org/) library.
 - [nn_setsockopt](http://nanomsg.org/v0.4/nn_setsockopt.3.html)
 - [nn_getsockopt](http://nanomsg.org/v0.4/nn_getsockopt.3.html)
 - add exceptions ([nn_errno](http://nanomsg.org/v0.4/nn_errno.3.html), [nn_strerror](http://nanomsg.org/v0.4/nn_strerror.3.html))
+- TESTS

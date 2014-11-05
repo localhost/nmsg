@@ -1,8 +1,8 @@
 #!/usr/bin/env ruby
 
-require_relative '../ext/ruby/rnmsg'
+require_relative '../ext/nmsg/nmsg'
 
-socket = Nanomsg::Socket.new Nanomsg::AF_SP, Nanomsg::NN_REQ
+socket = Nmsg::Socket.new Nmsg::AF_SP, Nmsg::NN_REQ
 puts "fd: #{socket.get_fd}  sysfd: #{socket.get_sysfd}"
 
 addr = ARGV.shift || "tcp://127.0.0.1:4000"
@@ -21,7 +21,7 @@ msg = ''
 loop do
   puts "loop (sent: #{sent})"
   unless sent
-    ev = socket.poll Nanomsg::NN_POLLOUT, 1000
+    ev = socket.poll Nmsg::NN_POLLOUT, 1000
     next if ev.nil?
     if ev
       msg = (0...8).map { ('a'..'z').to_a[rand(26)] }.join
@@ -33,7 +33,7 @@ loop do
       sleep 1
     end
   else
-    ev = socket.poll Nanomsg::NN_POLLIN, 1000
+    ev = socket.poll Nmsg::NN_POLLIN, 1000
     next if ev.nil?
     if ev
       data = socket.recv_msg

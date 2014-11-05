@@ -1,6 +1,6 @@
 //
-// rnmsg /|\ https://github.com/localhost/rnmsg
-//           a Ruby binding for nanomsg (http://nanomsg.org)
+// nmsg /|\ https://github.com/localhost/nmsg
+//          a Ruby binding for nanomsg (http://nanomsg.org)
 //
 // Copyright (c) 2014 Alex Brem
 //
@@ -52,7 +52,7 @@
     Socket *S; \
     Data_Get_Struct(self, Socket, S)
 
-static VALUE mRnmsg, cSocket;
+static VALUE mNmsg, cSocket;
 
 typedef struct {
     int fd;
@@ -245,10 +245,10 @@ VALUE rb_socket_device(VALUE klass, VALUE so1, VALUE so2) {
     return nn_device(S1->fd, S2->fd);
 }
 
-void Init_rnmsg() {
-    mRnmsg = rb_define_module("Nanomsg");
+void Init_nmsg() {
+    mNmsg = rb_define_module("Nmsg");
 
-    cSocket = rb_define_class_under(mRnmsg, "Socket", rb_cObject);
+    cSocket = rb_define_class_under(mNmsg, "Socket", rb_cObject);
     rb_define_alloc_func(cSocket, rb_socket_alloc);
 
     rb_define_method(cSocket, "initialize", rb_socket_initialize, 2);
@@ -276,10 +276,10 @@ void Init_rnmsg() {
         if (!name)
             break;
         if (strncmp("NN_", name, 3) == 0 || strncmp("AF_", name, 3) == 0)
-            rb_const_set(mRnmsg, rb_intern(name), INT2NUM(value));
+            rb_const_set(mNmsg, rb_intern(name), INT2NUM(value));
     }
 
     // nanomsg events (missing from nn_symbol)
-    rb_const_set(mRnmsg, rb_intern("NN_POLLIN"), INT2NUM(NN_POLLIN));
-    rb_const_set(mRnmsg, rb_intern("NN_POLLOUT"), INT2NUM(NN_POLLOUT));
+    rb_const_set(mNmsg, rb_intern("NN_POLLIN"), INT2NUM(NN_POLLIN));
+    rb_const_set(mNmsg, rb_intern("NN_POLLOUT"), INT2NUM(NN_POLLOUT));
 }
