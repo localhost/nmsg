@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name          = 'nmsg'
-  s.version       = '0.1.1.pre'
+  s.version       = '0.1.2.pre'
   s.license       = 'MIT'
   s.author        = 'Alex Brem'
   s.email         = 'alex@fluktuation.net'
@@ -11,8 +11,9 @@ Gem::Specification.new do |s|
   s.files         = [
     'README.md', 'LICENSE', 'Makefile', 'Gemfile', 'nmsg.gemspec',
     'examples/req.rb', 'examples/rep.rb', 'examples/push_pull.rb',
-    'ext/nmsg/extconf.rb', 'ext/nmsg/rubyext.c'
+    'ext/nmsg/extconf.rb', 'ext/nmsg/rubyext.c', 'test/test_nmsg.rb'
   ]
+  s.test_files    = ['test/test_nmsg.rb']
 
   s.require_paths = ['lib']
   s.extensions    = ["ext/nmsg/extconf.rb"]

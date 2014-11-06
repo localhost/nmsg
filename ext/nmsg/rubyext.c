@@ -193,6 +193,37 @@ VALUE rb_socket_send_msg_block(VALUE self, VALUE obj) {
 
 #endif // HAVE_RB_THREAD_CALL_WITHOUT_GVL
 
+VALUE rb_socket_get_opt(VALUE self, VALUE level, VALUE option) {
+    GET_SOCKET(self);
+    if (!S || S->fd < 0)
+        return Qnil;
+
+    // TODO/FIXME: string values
+
+    int lvl = NUM2INT(level);
+    int opt = NUM2INT(option);
+
+    int val = -1;
+    size_t sz = sizeof(val);
+    const int res = nn_getsockopt(S->fd, lvl, opt, &val, &sz);
+    return (res == 0) ? INT2NUM(val) : Qnil;
+}
+
+VALUE rb_socket_set_opt(VALUE self, VALUE level, VALUE option, VALUE value) {
+    GET_SOCKET(self);
+    if (!S || S->fd < 0)
+        return Qnil;
+
+    // TODO/FIXME: string values
+
+    int lvl = NUM2INT(level);
+    int opt = NUM2INT(option);
+    int val = NUM2INT(value);
+
+    const int res = nn_setsockopt(S->fd, lvl, opt, &val, sizeof(val));
+    return (res == 0) ? self : Qnil;
+}
+
 VALUE rb_socket_close(VALUE self) {
     GET_SOCKET(self);
     if (S && S->fd > 0) {
@@ -261,6 +292,9 @@ void Init_nmsg() {
 #ifdef HAVE_RB_THREAD_CALL_WITHOUT_GVL
     rb_define_method(cSocket, "send_msg_block", rb_socket_send_msg_block, 1);
 #endif
+
+    rb_define_method(cSocket, "get_option", rb_socket_get_opt, 2);
+    rb_define_method(cSocket, "set_option", rb_socket_set_opt, 3);
 
     rb_define_method(cSocket, "close", rb_socket_close, 0);
     rb_define_method(cSocket, "shutdown", rb_socket_shutdown, 1);
