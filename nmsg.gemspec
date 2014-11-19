@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name          = 'nmsg'
-  s.version       = '0.1.2.pre'
+  s.version       = '0.1.3'
   s.license       = 'MIT'
   s.author        = 'Alex Brem'
   s.email         = 'alex@fluktuation.net'
