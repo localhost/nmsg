@@ -1,6 +1,6 @@
 require 'mkmf'
 
-$CFLAGS << " #{ENV['CFLAGS']}"
+$CFLAGS << " -std=gnu99 #{ENV['CFLAGS']}"
 $LDFLAGS << " #{ENV['LDFLAGS']}"
 
 have_header('ruby/thread.h') && have_func('rb_thread_call_without_gvl', 'ruby/thread.h') # Ruby 2.0+
